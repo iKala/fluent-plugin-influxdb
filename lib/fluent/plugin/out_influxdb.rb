@@ -104,8 +104,10 @@ DESC
   FORMATTED_RESULT_FOR_INVALID_RECORD = ''.freeze
 
   def format(tag, time, record)
+    log.debug "tag: #{tag}, time: #{time}, record: #{record}"
     # nil and '' check should be in influxdb-ruby client...
-    if record.empty? || record.has_value?(nil) || record.has_value?(EMPTY_STRING)
+    # TODO: Modify all event to prevent empty string in all values.
+    if record.empty? || record.has_value?(nil)
       log.warn "Skip record '#{record}' in '#{tag}', because either record has no value or at least a value is 'nil' or empty string inside the record."
       FORMATTED_RESULT_FOR_INVALID_RECORD
     else
@@ -226,7 +228,9 @@ DESC
 
   def precision_time(time)
     # nsec is supported from v0.14
-    nstime = time * (10 ** 9) + (time.is_a?(Integer) ? 0 : time.nsec)
+    # NOTE: check time is float too for backward compatibility.
+    # TODO: upgrade all old fluentd-logger to make sure the time type is interval.
+    nstime = time * (10 ** 9) + (time.is_a?(Integer) || time.is_a?(Float) ? 0 : time.nsec)
     @time_precise.call(nstime)
   end
 end
